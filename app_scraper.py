@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import time
 import io
+import os
+import shutil
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
@@ -13,81 +15,64 @@ from webdriver_manager.chrome import ChromeDriverManager
 # --- PAGE CONFIGURATION ---
 st.set_page_config(page_title="GMap Lead Scout", page_icon="📡", layout="wide")
 
-# --- CUSTOM CSS FOR SLEEK UI ---
+# --- CUSTOM CSS ---
 st.markdown("""
     <style>
-    /* FIX: Mengurangi padding atas agar konten naik ke atas (Compact Mode) */
-    .block-container {
-        padding-top: 1.5rem;
-        padding-bottom: 3rem;
-    }
-    
-    /* Global Theme */
-    .stApp {
-        background-color: #0E1117;
-        color: #E0E0E0;
-    }
-    
-    /* Button Styling (Cyber Style) */
-    .stButton>button {
-        width: 100%;
-        border-radius: 4px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        background-color: #238636; 
-        color: white;
-        border: none;
-    }
-    .stButton>button:hover {
-        background-color: #2ea043;
-    }
-
-    /* Expander Styling */
-    .stExpander {
-        border: 1px solid #30363D;
-        border-radius: 6px;
-        background-color: #161B22;
-    }
-    
-    /* Dataframe Styling */
-    .stDataFrame {
-        border: 1px solid #30363D;
-    }
+    .block-container { padding-top: 1.5rem; padding-bottom: 3rem; }
+    .stApp { background-color: #0E1117; color: #E0E0E0; }
+    .stButton>button { width: 100%; border-radius: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; background-color: #238636; color: white; border: none; }
+    .stButton>button:hover { background-color: #2ea043; }
+    .stExpander { border: 1px solid #30363D; border-radius: 6px; background-color: #161B22; }
+    .stDataFrame { border: 1px solid #30363D; }
     </style>
 """, unsafe_allow_html=True)
 
 # --- MAIN HEADER ---
 st.title("📡 GMap Lead Scout // Pro Edition")
-st.markdown("**Automated Business Intelligence & Contact Extraction Tool.** Harvest URLs securely, then extract detailed metadata.")
-st.markdown("---") # Garis pemisah tipis
+st.markdown("**Automated Business Intelligence & Contact Extraction Tool.** Cloud-Ready Version.")
+st.markdown("---")
 
-# --- SIDEBAR: MISSION CONTROL ---
+# --- SIDEBAR ---
 with st.sidebar:
     st.header("⚙️ Mission Control")
     st.markdown("---")
-    
-    # Input Section
-    kata_kunci = st.text_input("Target Query", value="Pabrik di Cikarang", help="Enter specific location or niche. E.g., 'Textile Factory in Bandung'")
-    jumlah_target = st.slider("Extraction Limit", min_value=10, max_value=200, value=20, step=10, help="Maximum number of leads to extract.")
+    kata_kunci = st.text_input("Target Query", value="Pabrik di Cikarang", help="Enter specific location or niche.")
+    jumlah_target = st.slider("Extraction Limit", min_value=10, max_value=200, value=20, step=10)
     
     st.markdown("### Advanced Parameters")
-    mode_hantu = st.checkbox("Stealth Mode (Headless)", value=False, help="Run browser in background without UI rendering.")
+    # Di Cloud, Mode Hantu WAJIB aktif. Kita kunci saja jika terdeteksi Linux.
+    is_cloud = os.name == 'posix' # Deteksi Linux
+    default_headless = True if is_cloud else False
+    
+    mode_hantu = st.checkbox("Stealth Mode (Headless)", value=default_headless, help="Run browser in background.")
     
     st.markdown("---")
     tombol_mulai = st.button("INITIATE SEQUENCE", type="primary")
     
-    # Indikator status minimalis
-    if mode_hantu:
-        st.caption("🟢 System Status: **Stealth Mode Active**")
+    if is_cloud:
+        st.caption("☁️ Environment: **Cloud Server (Linux)**")
     else:
-        st.caption("🔵 System Status: **GUI Mode Active**")
+        st.caption("💻 Environment: **Local Machine (Windows)**")
+
+# --- SMART DRIVER SETUP ---
+def get_driver_service():
+    """
+    Fungsi pintar untuk memilih Driver.
+    - Jika di Cloud (Linux): Pakai /usr/bin/chromedriver (dari packages.txt)
+    - Jika di Lokal (Windows): Pakai ChromeDriverManager
+    """
+    # Cek path driver sistem (biasanya di Linux/Streamlit Cloud)
+    system_path = "/usr/bin/chromedriver"
+    if os.path.exists(system_path):
+        return Service(system_path)
+    
+    # Fallback untuk Windows/Mac (Local)
+    return Service(ChromeDriverManager().install())
 
 # --- CORE SCRAPER LOGIC ---
 def run_scraper(keyword, limit, headless):
     data_hasil = []
     
-    # Dashboard Layout (Lebih Rapi)
     col1, col2 = st.columns([3, 1])
     with col1:
         progress_bar = st.progress(0)
@@ -105,22 +90,32 @@ def run_scraper(keyword, limit, headless):
             elif type == "warning": st.warning(f"[{timestamp}] WARNING : {msg}")
             elif type == "error": st.error(f"[{timestamp}] ERROR : {msg}")
 
-    # WebDriver Setup
+    # WebDriver Options (Critical for Cloud)
     options = webdriver.ChromeOptions()
     options.add_argument("--start-maximized")
     options.add_argument("--log-level=3")
     options.add_argument("--disable-blink-features=AutomationControlled")
+    
+    # WAJIB UNTUK STREAMLIT CLOUD / DOCKER
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu")
+
     if headless:
         options.add_argument("--headless=new")
 
     driver = None
     try:
         log("Initializing WebDriver kernel...")
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+        
+        # PANGGIL FUNGSI SMART DRIVER
+        service = get_driver_service()
+        driver = webdriver.Chrome(service=service, options=options)
+        
         wait = WebDriverWait(driver, 20)
         
-        # 1. Navigation phase
-        driver.get("https://www.google.com/maps?hl=en") # Force English for consistency
+        # 1. Navigation
+        driver.get("https://www.google.com/maps?hl=en")
         time.sleep(3)
         
         log(f"Acquiring target: **{keyword}**...")
@@ -128,7 +123,6 @@ def run_scraper(keyword, limit, headless):
             box = None
             try: box = driver.find_element(By.ID, "searchboxinput")
             except: pass
-            
             if not box: box = driver.find_element(By.NAME, "q")
             
             if box:
@@ -143,7 +137,7 @@ def run_scraper(keyword, limit, headless):
             log(f"Search execution failed: {e}", "error")
             return []
 
-        # 2. Harvesting Phase
+        # 2. Harvesting
         log("Harvesting endpoints (Scrolling)...")
         time.sleep(3)
         
@@ -194,34 +188,29 @@ def run_scraper(keyword, limit, headless):
             if url:
                 list_urls.append(url)
         
-        log(f"Index secured: {len(list_urls)} endpoints ready. Commencing direct extraction...", "success")
+        log(f"Index secured: {len(list_urls)} endpoints ready. Commencing extraction...", "success")
         
-        # 3. Extraction Phase (Direct Visit)
+        # 3. Extraction
         total_items = len(list_urls)
         
         for i, url in enumerate(list_urls):
             try:
-                # Update Status
                 progress_val = (i) / total_items
                 progress_bar.progress(progress_val)
                 status_text.markdown(f"**Phase 2/2: Extracting Intelligence...**")
                 counter_text.markdown(f"### `{i+1}/{total_items}`")
                 
                 driver.get(url)
-                
                 try:
                     wait.until(EC.presence_of_element_located((By.TAG_NAME, "h1")))
                 except:
                     time.sleep(2) 
                 
-                # --- DATA MINING ---
-                # Name
+                # Data Mining
                 nama_bisnis = "N/A"
-                try:
-                    nama_bisnis = driver.find_element(By.TAG_NAME, "h1").text
+                try: nama_bisnis = driver.find_element(By.TAG_NAME, "h1").text
                 except: pass
 
-                # Phone
                 no_telp = "-"
                 try:
                     btns = driver.find_elements(By.XPATH, '//button[contains(@data-item-id, "phone:tel:")]')
@@ -232,15 +221,12 @@ def run_scraper(keyword, limit, headless):
                         no_telp = "Not Available"
                 except: pass
 
-                # Website
                 website = "-"
                 try:
                     web_btns = driver.find_elements(By.CSS_SELECTOR, 'a[data-item-id="authority"]')
-                    if web_btns:
-                        website = web_btns[0].get_attribute("href")
+                    if web_btns: website = web_btns[0].get_attribute("href")
                 except: pass
 
-                # Address
                 alamat = "-"
                 try:
                     addr_btns = driver.find_elements(By.XPATH, '//button[contains(@data-item-id, "address")]')
@@ -249,7 +235,6 @@ def run_scraper(keyword, limit, headless):
                         alamat = txt.replace("Alamat: ", "").replace("Address: ", "").strip()
                 except: pass
                 
-                # Append to dataset
                 data_hasil.append({
                     "Entity Name": nama_bisnis,
                     "Contact Number": no_telp,
@@ -265,7 +250,7 @@ def run_scraper(keyword, limit, headless):
 
         progress_bar.progress(1.0)
         status_text.text("Operation Complete.")
-        log("Sequence finished. Shutting down WebDriver.", "success")
+        log("Sequence finished.", "success")
         return data_hasil
 
     except Exception as e:
@@ -275,23 +260,24 @@ def run_scraper(keyword, limit, headless):
         if driver:
             driver.quit()
 
-# --- EXECUTION LOGIC ---
+# --- EXECUTION ---
 if tombol_mulai:
     if not kata_kunci:
         st.warning("⚠️ Input Error: Target Query is required.")
     else:
+        # PENTING: Jika di Cloud, PAKSA HEADLESS meskipun user lupa centang
+        force_headless = True if is_cloud else mode_hantu
+        
         with st.spinner('Initializing GMap Scout Protocol...'):
-            hasil_scraping = run_scraper(kata_kunci, jumlah_target, mode_hantu)
+            hasil_scraping = run_scraper(kata_kunci, jumlah_target, force_headless)
             
         if hasil_scraping:
             st.success(f"✅ Operation Successful. Extracted {len(hasil_scraping)} entities.")
             
-            # Display Data
             st.subheader("Extracted Intelligence")
             df = pd.DataFrame(hasil_scraping)
             st.dataframe(df, use_container_width=True)
             
-            # Export
             buffer = io.BytesIO()
             with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
                 df.to_excel(writer, index=False, sheet_name='Leads')
@@ -308,4 +294,4 @@ if tombol_mulai:
                     type="primary"
                 )
         else:
-            st.error("❌ Operation Failed. No data retrieved. Verify connection or query parameters.")
+            st.error("❌ Operation Failed. No data retrieved.")
