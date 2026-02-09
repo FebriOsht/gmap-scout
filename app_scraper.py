@@ -226,6 +226,17 @@ def run_scraper(keyword, limit, headless):
                     web_btns = driver.find_elements(By.CSS_SELECTOR, 'a[data-item-id="authority"]')
                     if web_btns: website = web_btns[0].get_attribute("href")
                 except: pass
+                
+                # --- FITUR BARU: EMAIL SCRAPING ---
+                email_addr = "-"
+                try:
+                    # Mencari tombol/elemen yang mengandung data email
+                    # Note: Jarang muncul di GMap langsung, tapi kita coba tangkap jika ada
+                    email_btns = driver.find_elements(By.XPATH, '//button[contains(@data-item-id, "email")]')
+                    if email_btns:
+                        txt = email_btns[0].get_attribute("aria-label") or ""
+                        email_addr = txt.replace("Email: ", "").strip()
+                except: pass
 
                 alamat = "-"
                 try:
@@ -238,6 +249,7 @@ def run_scraper(keyword, limit, headless):
                 data_hasil.append({
                     "Entity Name": nama_bisnis,
                     "Contact Number": no_telp,
+                    "Email Address": email_addr,  # Kolom Baru
                     "Website URL": website,
                     "Address": alamat,
                     "Search Query": keyword,
@@ -276,6 +288,11 @@ if tombol_mulai:
             
             st.subheader("Extracted Intelligence")
             df = pd.DataFrame(hasil_scraping)
+            
+            # Reorder columns to put Email next to Phone
+            cols = ["Entity Name", "Contact Number", "Email Address", "Website URL", "Address", "Search Query", "Status"]
+            df = df[cols]
+            
             st.dataframe(df, use_container_width=True)
             
             buffer = io.BytesIO()
