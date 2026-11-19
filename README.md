@@ -7,6 +7,7 @@
     </picture>
   </a>
 </p>
+
 # GMaps Scout
 
 Turn publicly listed business details into a spreadsheet for market research.
