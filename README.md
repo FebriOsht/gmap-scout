@@ -1,3 +1,12 @@
+<p align="center">
+  <a href="https://lab.vulpfest.com">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://cdn.jsdelivr.net/npm/@vulpfest/icons@0.3/svg/vulpfest-logo-night.svg" />
+      <source media="(prefers-color-scheme: light)" srcset="https://cdn.jsdelivr.net/npm/@vulpfest/icons@0.3/svg/vulpfest-logo-day.svg" />
+      <img src="https://cdn.jsdelivr.net/npm/@vulpfest/icons@0.3/svg/vulpfest-logo-night.svg" height="44" alt="Vulpfest Lab" />
+    </picture>
+  </a>
+</p>
 # GMaps Scout
 
 Turn publicly listed business details into a spreadsheet for market research.
