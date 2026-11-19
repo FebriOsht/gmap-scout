@@ -13,7 +13,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 
 # --- PAGE CONFIGURATION ---
-st.set_page_config(page_title="GMap Lead Scout Pro", page_icon="📡", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="GMap Lead Scout Pro", page_icon="https://cdn.jsdelivr.net/npm/@vulpfest/icons@0.3/svg/vulpfest-mark-night.svg", layout="wide", initial_sidebar_state="expanded")
 
 # --- CUSTOM CSS (MODERN UI / SILICON VALLEY STYLE) ---
 st.markdown("""
@@ -131,7 +131,7 @@ st.markdown("""
 
 # --- SIDEBAR COMPONENT ---
 with st.sidebar:
-    st.image("https://cdn-icons-png.flaticon.com/512/854/854878.png", width=60) # Placeholder icon
+    st.image("https://cdn.jsdelivr.net/npm/@vulpfest/icons@0.3/svg/vulpfest-logo-night.svg", width=140)
     st.markdown("### ⚙️ Mission Control")
     st.markdown("---")
     
