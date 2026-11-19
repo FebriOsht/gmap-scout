@@ -12,7 +12,7 @@ Turn publicly listed business details into a spreadsheet for market research.
 
 ## Run it yourself
 
-````bash
+```bash
 git clone https://github.com/FebriOsht/gmap-scout.git
 cd gmap-scout
 pip install -r requirements.txt
