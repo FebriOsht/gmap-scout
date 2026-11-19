@@ -21,6 +21,28 @@ streamlit run app_scraper.py
 
 Needs Google Chrome or Chromium on your computer. On Streamlit Community Cloud, Chromium is installed from `packages.txt`.
 
+## Works on Windows, macOS and Linux
+
+Requires Python 3.10 or newer. A virtual environment keeps the packages separate from the rest of your system.
+
+**Windows (PowerShell)**
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+**macOS and Linux (bash or zsh)**
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+If PowerShell blocks the activation script, run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once and try again.
+
 ## Command line
 
 Requires Google Chrome or Chromium.
@@ -47,6 +69,16 @@ The software is provided as is, without warranty. You are responsible for how yo
 ## Security
 
 Found a security issue? Please see [SECURITY.md](SECURITY.md).
+
+## Support this project
+
+This tool is free. If it saves you time, you can support its development:
+
+- [Saweria](https://saweria.co/FebriOsht): QRIS, e-wallet and bank transfer, for supporters in Indonesia
+- [PayPal](https://paypal.me/FebriOsht)
+- Crypto (USDT BEP20, USDT TRC20, Bitcoin): see the [addresses and QR codes](https://github.com/FebriOsht#support)
+
+Starring the repository helps too. ⭐
 
 ## License
 
